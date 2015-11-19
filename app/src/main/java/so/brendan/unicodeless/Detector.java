@@ -18,10 +18,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -44,6 +47,9 @@ public class Detector extends ActionBarActivity {
                 new ScanTask().execute();
             }
         });
+
+        TextView textView = (TextView) findViewById(R.id.textView);
+        textView.setText("Missing glyph: \ue000");
     }
 
     public static final Paint PAINT;
@@ -92,7 +98,7 @@ public class Detector extends ActionBarActivity {
     static {
         Bitmap bmp = createBitmap();
         ByteBuffer buf = createBuffer(bmp);
-        MISSING_CHAR = getPixels(buf, drawBitmap(bmp, "\u0196"));
+        MISSING_CHAR = getPixels(buf, drawBitmap(bmp, "\uE000"));
     }
 
     static public final int LAST_CODEPOINT = 0x1F700;//0xE01EF;
@@ -168,15 +174,19 @@ public class Detector extends ActionBarActivity {
 
             publishProgress("Done!", outputValues());
 
-            File file = new File(Environment.getExternalStorageDirectory(), "valid_codepoints.txt");
+            File file = new File(getFilesDir(), "valid_codepoints.txt");
 
             if (file.exists()) {
                 file.delete();
-                file = new File(Environment.getExternalStorageDirectory(), "valid_codepoints.txt");
+                try {
+                    file.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             try {
-                FileOutputStream outputStream = new FileOutputStream(file);
+                BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
                 outputStream.write(mOutput.getText().toString().getBytes());
                 outputStream.close();
             } catch (Exception e) {
